@@ -1,0 +1,52 @@
+name: Deploy WordPress and Nginx
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-wordpress-nginx:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup WordPress
+      run: |
+        sudo apt update
+        sudo apt install -y apache2 mysql-server php php-mysql libapache2-mod-php php-cli wget unzip
+        wget https://wordpress.org/latest.zip
+        unzip latest.zip
+        sudo mv wordpress /var/www/html/wordpress2
+        sudo chown -R www-data:www-data /var/www/html/wordpress2
+        sudo chmod -R 755 /var/www/html/wordpress2
+
+    - name: Setup Nginx Configuration
+      run: |
+        sudo apt install -y nginx
+        sudo rm /etc/nginx/sites-enabled/default
+        cat <<EOF | sudo tee /etc/nginx/sites-available/wordpress2
+        server {
+            listen 80;
+            server_name  47.129.236.84;
+            root /var/www/html/wordpress2;
+            index index.php index.html index.htm;
+
+            location / {
+                try_files \$uri \$uri/ /index.php?\$args;
+            }
+
+            location ~ \.php\$ {
+                include snippets/fastcgi-php.conf;
+                fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
+            }
+
+            location ~ /\.ht {
+                deny all;
+            }
+        }
+        EOF
+        sudo ln -s /etc/nginx/sites-available/wordpress2 /etc/nginx/sites-enabled/
+        sudo systemctl restart nginx
