@@ -30,7 +30,7 @@ jobs:
         cat <<EOF | sudo tee /etc/nginx/sites-available/wordpress2
         server {
             listen 80;
-            server_name  47.129.236.84;
+            server_name 18.142.179.101;
             root /var/www/html/wordpress2;
             index index.php index.html index.htm;
 
